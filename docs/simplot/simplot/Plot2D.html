@@ -1,0 +1,1112 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>Plot2D class / simplot Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="simplot" data-type="Plot2D">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../simplot.html">simplot</a> &rsaquo; <a href="../simplot/Plot2D.html">Plot2D</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>Plot2D</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p>Configures the axes and draws the data to the canvas.</p>
+<p>It is not recommended to instantiate this class directly, but rather through
+the top level function plot().</p>
+<pre class="source">
+class Plot2D {
+ _AxisConfigResults _yAxisCfg;
+ _AxisConfigResults _xAxisCfg;
+
+ final _border = 100;
+ final _borderL = 80;
+ final _borderT = 50;
+ final _tickSize = 5;
+ final _index = 0;
+
+ final CanvasRenderingContext2D context;
+ final LinkedHashMap _ydata, _color, _style;
+ final List _xdata;
+ final num _pwidth, _pheight;
+ final int _linewidth;
+ num _xmin, _xmax, _xdiv, _xstep;
+ num _ymin, _ymax, _ydiv, _ystep;
+ var _dataLength;
+ var _yWithData = 0;
+
+ Plot2D(this.context, this._ydata, this._xdata, this._color, this._style,
+     this._pwidth, this._pheight, this._linewidth) {
+
+   var _tickPt;
+   var _first = true;
+   var _miny, _maxy;
+   var _minx, _maxx;
+
+   //Compute y axis min and max.
+   for (var value in _ydata.values) {
+     if (value != null) {
+       if (value.isEmpty) {
+         throw new ArgumentError("Empty data lists are not supported.");
+       } else if (_first) {
+         _miny = value.fold(value.first, min);
+         _maxy = value.fold(value.first, max);
+         _first = false;
+       } else {
+         var _tempMin = value.fold(value.first, min);
+         if (_tempMin &lt; _miny) _miny = _tempMin;
+         var _tempMax = value.fold(value.first, max);
+         if (_tempMax &gt; _maxy) _maxy = _tempMax;
+       }
+     }
+   }
+
+   //Compute x axis min and max.
+   _minx = _xdata.fold(_xdata.first, min);
+   _maxx = _xdata.fold(_xdata.first, max);
+
+   //Compute optimum divisions of axes.
+   _xAxisCfg = new _AxisConfig().axes(_minx, _maxx, _pwidth - _border);
+   _yAxisCfg = new _AxisConfig().axes(_miny, _maxy, _pheight - _border);
+
+   //Define and initialize the plot parameters.
+   _xmin = _xAxisCfg.min;
+   _xmax = _xAxisCfg.max;
+   _xdiv = _xAxisCfg.div;
+   _xstep = _xAxisCfg.step;
+   _ymin = _yAxisCfg.min;
+   _ymax = _yAxisCfg.max;
+   _ydiv = _yAxisCfg.div;
+   _ystep = _yAxisCfg.step;
+   var
+     _offset = _style == 'data' ? _xdiv / _xstep : _xdiv,
+     _increment = _style == 'data' ? 1 : _xstep;
+
+   //Draw the graph outline.
+   context
+     ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
+     ..lineCap = "round"
+     ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border, 2)
+     ..lineWidth = 1;
+
+   //Create tick marks on x axis.
+   for (var i = _borderL + _offset; i &lt; _pwidth - (_border - _borderL); i += _offset) {
+     context
+       //bottom ticks
+       ..beginPath()
+       ..moveTo(i.toInt() + 0.5, _pheight - _borderT)
+       ..lineTo(i.toInt() + 0.5, _pheight - _borderT - _tickSize)
+       ..stroke()
+       //top ticks
+       ..moveTo(i.toInt() + 0.5, _borderT + _tickSize)
+       ..lineTo(i.toInt() + 0.5, _borderT)
+       ..stroke();
+   }
+
+   //Add labels to the x axis tick marks.
+   context
+     ..textAlign = 'center'
+     ..font = '10pt Consolas';
+   _tickPt = _xmin;
+   //if (_xstep == _xstep.toInt()) {
+   if (_increment == _increment.toInt()) {
+     for (var j = _xmin; j &lt;= _xmax; j += _increment) {
+       context.fillText(j.toInt().toString(), _borderL + ((j - _xmin)/_increment)
+           * _offset, _pheight - _borderT + (_borderT / 3));
+       _tickPt += _increment;
+     }
+   } else {
+     // TODO: exponent, precision, fixed number labels.
+     var numDigits = 2;
+     if (_xmax &lt; 0.01) numDigits = 3;
+     for (var j = _xmin; j &lt;= _xmax; j += _increment) {
+       context.fillText(j.toStringAsFixed(numDigits), _borderL + ((j - _xmin)/_increment) * _offset,
+           _pheight - _borderT + (_borderT / 3));
+       _tickPt += _increment;
+     }
+   }
+
+   //Create tick marks on y axis.
+   for (var i = _pheight - _borderT - _ydiv; i &gt; _borderT; i -= _ydiv) {
+     context
+       //left ticks
+       ..moveTo(_borderL, i.toInt() + 0.5)
+       ..lineTo(_borderL + _tickSize, i.toInt() + 0.5)
+       ..stroke()
+       //right ticks
+       ..moveTo(_pwidth - (_border - _borderL), i.toInt() + 0.5)
+       ..lineTo(_pwidth - (_border - _borderL) - _tickSize, i.toInt() + 0.5)
+       ..stroke();
+   }
+
+   //Add labels to the y axis tics.
+   context
+     ..font = '10pt Consolas'
+     ..textAlign = 'right';
+   _tickPt = _ymin;
+   if (_ystep == _ystep.toInt()) {
+     for (var i = _pheight - _borderT; i &gt; _borderT - _ydiv / 2; i -= _ydiv) {
+       context.fillText(_tickPt.toInt().toString(), _borderL - _tickSize, i.toInt());
+       _tickPt += _ystep;
+     }
+   } else {
+     // Need test cases for exponent, precision, fixed number labels.
+     var numDigits = 2;
+     if (_ymax &lt; 0.01) numDigits = 3;
+     for (var i = _pheight - _borderT; i &gt; _borderT - _ydiv / 2; i -= _ydiv) {
+       context.fillText(_tickPt.toStringAsFixed(numDigits), _borderL - _tickSize,
+           i.toInt());
+       _tickPt += _ystep;
+     }
+   }
+
+   //Plot the data.
+   for (var waveform in _ydata.keys) {
+     if (_ydata[waveform] != null) {
+       _yWithData++;
+       if (_ydata[waveform].length &gt; _xdata.length) {
+         _dataLength = _xdata.length;
+       } else {
+         _dataLength = _ydata[waveform].length;
+       }
+       if (_style[waveform] == 'data') {
+         context.lineWidth = _linewidth;
+         _drawData(_color[waveform], _ydata[waveform]);
+       } else if (_style[waveform] == 'points') {
+         context.lineWidth = _linewidth;
+         _drawPoints(_color[waveform], _ydata[waveform]);
+       } else if (_style[waveform] == 'curve' || _style[waveform] == 'curvepts') {
+         context.lineWidth = _linewidth;
+         _drawCurve(_color[waveform], _ydata[waveform], _style[waveform]);
+       } else if (_style[waveform] == 'line' || _style[waveform] == 'linepts') {
+         context.lineWidth = _linewidth;
+         _drawLine(_color[waveform], _ydata[waveform], _style[waveform]);
+       }
+     }
+   }
+ }
+
+ /// Private methods for drawing plots.
+ // Drawing the data plots - style = 'data'.
+ void _drawData(var dataColor, var yvals) {
+   //Add sample data and points.
+   context.strokeStyle = dataColor;
+   for (var j = 0; j &lt; _dataLength; j++) {
+     var i = _borderL + (((_xdata[j]) - _xmin)/_xstep * _xdiv);
+     context
+       ..beginPath()
+       ..moveTo(i.toInt(), _pheight - _borderT)
+       ..lineTo(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin) / _ystep * _ydiv))
+       ..stroke()
+       ..beginPath()
+       ..arc(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin) / _ystep * _ydiv),
+           4, 0, 2 * PI, false)
+       ..closePath()
+       ..stroke();
+   }
+ }
+
+ // Drawing the points plots - style = 'points'.
+ void _drawPoints(var dataColor, var yvals) {
+   //Add sample points.
+   context.strokeStyle = dataColor;
+   for (var j = 0; j &lt; _dataLength; j++) {
+     var i = _borderL + (((_xdata[j]) - _xmin) / _xstep * _xdiv);
+     context
+       ..beginPath()
+       ..arc(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin)
+           / _ystep * _ydiv), 4, 0, 2 * PI, false)
+       ..closePath()
+       ..stroke();
+   }
+ }
+
+ // Drawing the curve plots - style = 'curve' or 'curvepts'.
+ void _drawCurve(var dataColor, var yvals, var style) {
+   var a, b, c, d;
+   context
+     ..strokeStyle = dataColor
+     ..beginPath()
+     ..lineJoin = "round"
+     ..moveTo(_borderL + (((_xdata[_index]) - _xmin) / _xstep * _xdiv),
+         _pheight - _borderT - (((yvals[_index]) - _ymin) / _ystep *
+                           _ydiv));
+   for (var j = 1; j &lt; _dataLength - 2; j++) {
+     a = _borderL + ((_xdata[j] - _xmin) / _xstep * _xdiv);
+     b = _borderL + ((_xdata[j + 1] - _xmin) / _xstep * _xdiv);
+     c = _pheight - _borderT - (((yvals[j]) - _ymin) / _ystep * _ydiv);
+     d = _pheight - _borderT - (((yvals[j + 1]) - _ymin) / _ystep *
+         _ydiv);
+     context.quadraticCurveTo(a, c, (a + b) / 2, (c + d) / 2);
+   }
+   a = _borderL + ((_xdata[_dataLength - 2] - _xmin) / _xstep * _xdiv);
+   b = _borderL + ((_xdata[_dataLength - 1] - _xmin) / _xstep * _xdiv);
+   c = _pheight - _borderT - (((yvals[_dataLength - 2]) - _ymin)
+       / _ystep * _ydiv);
+   d = _pheight - _borderT - (((yvals[_dataLength - 1]) - _ymin)
+       / _ystep * _ydiv);
+   context
+     ..quadraticCurveTo(a, c, b, d)
+     ..stroke();
+
+   if (style == 'curvepts') {
+     //Add sample points.
+     context.fillStyle = dataColor;
+     for (var j = 0; j &lt; _dataLength; j++) {
+       var i = _borderL + ((_xdata[j] - _xmin) / _xstep * _xdiv);
+       context
+         ..beginPath()
+         ..arc(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin) /
+             _ystep * _ydiv), 4, 0, 2 * PI, false)
+         ..closePath()
+         ..fill();
+     }
+   }
+ }
+
+ // Drawing the line plots - style = 'line' or 'linepts'.
+ void _drawLine(var dataColor, var yvals, var style) {
+   //Add sample data.
+   context
+   ..strokeStyle = dataColor
+   ..beginPath()
+   ..lineJoin = "round"
+   ..moveTo(_borderL + (((_xdata[_index]) - _xmin) / _xstep * _xdiv),
+       _pheight - _borderT - (((yvals[_index]) - _ymin) / _ystep * _ydiv));
+   for (var j = 1; j &lt; _dataLength; j++) {
+     var i = _borderL + (((_xdata[j]) - _xmin)/_xstep * _xdiv);
+     context
+       ..lineTo(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin) / _ystep * _ydiv))
+       ..stroke();
+   }
+   if (style == 'linepts') {
+     //Add sample points.
+     context.fillStyle = dataColor;
+     for (var j = 0; j &lt; _dataLength; j++) {
+       var i = _borderL + (((_xdata[j]) - _xmin)/_xstep * _xdiv);
+       context
+       ..beginPath()
+       ..arc(i.toInt(), _pheight - _borderT - (((yvals[j]) - _ymin) / _ystep * _ydiv),
+           4, 0, 2 * PI, false)
+       ..closePath()
+       ..fill();
+     }
+   }
+ }
+
+ // Public methods for customizing plot.
+
+ /**
+  * Adds a grid to a plot.
+  *
+  * Uses the same spacing as the x and y tick marks.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.grid();
+  */
+ void grid() {
+   var _offset = _style == 'data' ? _xdiv / _xstep : _xdiv;
+   context
+     ..fillStyle = 'black'
+     ..lineWidth = 1;
+   for (var i = _borderL + _offset; i &lt; _pwidth - (_border - _borderL); i += _offset) {
+     for (var j = _pheight - _borderT - _ydiv; j &gt; _borderT; j -= _ydiv) {
+       context
+         ..beginPath()
+         ..arc(i.toInt() + 0.5, j.toInt() + 0.5, 1, 0, 2 * PI, false)
+         ..closePath()
+         ..fill();
+     }
+   }
+ }
+
+ /**
+  * Adds a label to the x axis.
+  *
+  * The xlabelName is a required String value.  Method also accepts
+  * two optional named parameters, a String value for the color of the label,
+  * and a String value for the label font.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.xlabel('samples(n)', color:'red', font:'8pt Arial');
+  */
+ void xlabel(String xlabelName, {String color:'DarkSlateGray',
+     String font:'11pt Verdana'}) {
+   context
+     ..fillStyle = color
+     ..font = font
+     ..textAlign = 'center'
+     ..fillText(xlabelName, ((_pwidth  + (2 * _borderL) - _border)/ 2),
+         _pheight - _borderT / 10);
+ }
+
+ /**
+  * Adds a label to the y axis.
+  *
+  * The ylabelName is a required String value.  Method also accepts
+  * two optional named parameters, a String value for the color of the label,
+  * and a String value for the label font.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.ylabel('data(x1e3)', color:'#ccc', font:'16pt Helvetica');
+  *
+  * For y values with a large number of signicant digits, it is recommended
+  * that you scale the data prior to plotting.  It is currently an issue
+  * to build in the scaling and allow different number notation.  But
+  * currently, large number of significant digits will likely cause the
+  * ylabel to draw over the top of the yaxis tick values.
+  */
+
+ //Method for adding a label to the y axis.
+ //TODO: This needs a way of detecting how much room is available
+ //relative to the size of the tick labels.  If they take up too much
+ //room (ie, numbers like 1.20e+12), then may need to place the y axis
+ //label above the tick marks (ie, upper left corner).
+ void ylabel(String ylabelName, {String color:'DarkSlateGray',
+     String font:'11pt Verdana'}) {
+   var
+     _lblWidth = context.measureText(ylabelName),
+     _deltax = _borderL / 4,
+     _deltay = _pheight / 2;
+   context
+     ..fillStyle = color
+     ..font = font
+     ..textAlign = 'center'
+     ..save()
+     ..translate(_deltax, _deltay)
+     ..rotate(-PI / 2)
+     ..translate(-_deltax, -_deltay)
+     ..fillText(ylabelName, 0, _pheight / 2)
+     ..restore();
+ }
+
+ /**
+  * Adds a title to the current plot.
+  *
+  * The title is a required String value.  The method also accepts
+  * two optional named parameters, a String value for the color of the label,
+  * and a String value for the label font.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.title('A Sample Plot', color:'rgba(42, 42, 88, 0.5)',
+  *         font:'14pt Caslon');
+  */
+ void title(String title, {String color:'DarkSlateGray',
+     String font:'13pt Verdana'}) {
+   context
+     ..fillStyle = color
+     ..textAlign = 'center'
+     ..font = font
+     ..fillText(title, ((_pwidth  + (2 * _borderL) - _border) / 2), _borderT / 2);
+ }
+
+ /**
+  * Adds a date stamp to the current plot.
+  *
+  * The date stamp can be in either a "short" form or a "long" (default) form.
+  *
+  * * long: 9:56pm Tue 16-Oct-2012
+  * * short: 9:56pm 10/16/2012
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.date(true);
+  */
+ void date([bool short = false]) {
+   String _dateTime = new TimeStamp().stamp(short);
+   context
+     ..fillStyle = 'rgb(85, 98, 112)'
+     ..textAlign = 'right'
+     ..font = '8pt Verdana'
+     ..fillText(_dateTime, _pwidth, _pheight - _tickSize);
+ }
+
+ /**
+  * Adds a legend to the current plot.
+  * All parameters are optional.  In its simpliest form, the legend uses
+  * the default labels for each graph in the plot (up to 4 graphs per plot).
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.legend();
+  *
+  * This method also allows for the specification of names for each graph.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.legend(y1:'y = 3x - 2', y2:'cosh(x)');
+  *
+  */
+ void legend({String l1: 'y1', String l2: 'y2', String l3: 'y3',
+     String l4: 'y4', String font: 'bold 12px Tahoma',
+     bool top: true}) {
+   context
+     ..font = font
+     ..textAlign = 'left';
+   var llabel = new LinkedHashMap();
+   llabel["y1"] = _ydata["y1"] != null ? l1 : '';
+   llabel["y2"] = _ydata["y2"] != null ? l2 : '';
+   llabel["y3"] = _ydata["y3"] != null ? l3 : '';
+   llabel["y4"] = _ydata["y4"] != null ? l4 : '';
+   var _yWidths = [context.measureText(llabel["y1"]).width,
+                   context.measureText(llabel["y2"]).width,
+                   context.measureText(llabel["y3"]).width,
+                   context.measureText(llabel["y4"]).width];
+   var
+     _legendWidth = 20 + _yWidths.fold(_yWidths.first, max),
+     _legendHeight = 20 + (_yWithData * _pheight) ~/ (8 * _ydata.length),
+     _legendBorder = 10,
+     _legendX = _pwidth + _borderL - _border - _legendWidth - _legendBorder,
+     _legendY = top == true ? _borderT + _legendBorder
+         : _pheight - _legendBorder - _legendHeight - _borderT,
+     _yOffset = (_legendHeight - 15) ~/ _yWithData;
+   context
+     ..fillStyle = 'white'
+     ..fillRect(_legendX, _legendY, _legendWidth, _legendHeight)
+     ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
+     ..lineCap = "round"
+     ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight, 2)
+     ..lineWidth = 1;
+   for (var waveform in _ydata.keys) {
+     if (_ydata[waveform] != null) {
+       context
+         ..fillStyle = _color[waveform]
+         ..fillText(llabel[waveform], 10 + _legendX, _legendY + _yOffset,
+             _legendWidth);
+       _yOffset += _legendHeight ~/ _yWithData;
+     }
+   }
+ }
+
+ /**
+  * Adds a marker to the x axis of the current plot at position x = xval.
+  *
+  * The method requires an x value to be provided.  If the value of x specified
+  * is not a data point (ie, indexOf(xval) returns -1) and the optional
+  * annotation variable is set to true, the data will not be displayed (ie,
+  * the marker x position is not interpolated between data points).
+  *
+  * The color and size of the marker can also be specified.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.xmarker(data[4], true);
+  */
+ void xmarker(num xval, {bool annotate:false, String color:'rgb(85, 98, 112)',
+     var width:1}) {
+   var offset = (width % 2) / 2;
+   var _xindex = _xdata.indexOf(xval);
+   context
+     ..font = "italic bold 16px consolas"
+     ..textAlign = 'left'
+     ..strokeStyle = color
+     ..lineWidth = width
+     ..beginPath()
+     ..moveTo(offset + (_borderL + ((xval - _xmin) / _xstep * _xdiv)).toInt(), _pheight - _borderT)
+     ..lineTo(offset + (_borderL + ((xval - _xmin) / _xstep * _xdiv)).toInt(), _borderT)
+     ..stroke();
+   if (annotate) {
+     for (var waveform in _ydata.keys) {
+       if (_ydata[waveform] != null) {
+         var _dataLength = _ydata[waveform].length;
+         if (_xindex &lt; _dataLength &amp;&amp; _xindex != -1) {
+           var
+             _dataPoint = _ydata[waveform][_xindex],
+             _value = _dataPoint.toString(),
+             _valWidth = 10 + context.measureText(_value).width,
+             _valHeight = 5 + _pheight ~/ 32,
+             _valX = _borderL + ((xval - _xmin) / _xstep * _xdiv),
+             _valY = _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv);
+           if (_xindex &lt; _dataLength ~/ 2) {
+             context
+               ..fillStyle = 'rgba(255, 255, 255, 0.85)'
+               ..fillRect(5 + _valX, 10 + _valY - _valHeight, _valWidth, _valHeight)
+               ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
+               ..lineCap = "round"
+               ..strokeRect(5 + _valX, 10 + _valY - _valHeight, _valWidth,
+                   _valHeight, 1)
+               ..fillStyle = _color[waveform]
+               ..fillText(_value, 10 + _borderL + ((xval - _xmin) / _xstep * _xdiv),
+                   5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
+           } else {
+             context
+               ..fillStyle = 'rgba(255, 255, 255, 0.85)'
+               ..fillRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
+                   _valWidth, _valHeight)
+               ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
+               ..lineCap = "round"
+               ..strokeRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
+                   _valWidth, _valHeight, 1)
+               ..fillStyle = _color[waveform]
+               ..fillText(_value, _borderL + ((xval - _xmin) / _xstep * _xdiv) - _valWidth,
+                   5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
+           }
+         }
+       }
+     }
+   }
+ }
+ /**
+  * Adds a marker to the y axis of the current plot at position y = yval.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.ymarker(0);
+  */
+ void ymarker(num yval, {String color:'rgb(85, 98, 112)', var width:1}) {
+   var offset = (width % 2) / 2;
+   context
+     ..strokeStyle = color
+     ..lineWidth = width
+     ..beginPath()
+     ..moveTo(_borderL, offset + (_pheight - _borderT - ((yval - _ymin) / _ystep * _ydiv)).toInt())
+     ..lineTo(_pwidth - (_border - _borderL), offset + (_pheight - _borderT - ((yval - _ymin) / _ystep * _ydiv)).toInt())
+     ..stroke();
+ }
+
+ /**
+  * Saves an individual plot by creating a PNG image in a new browser window.
+  *
+  * Usage:
+  *     var myPlot = plot(data);
+  *     myPlot.save();
+  */
+ void save() {
+   window.open(context.canvas.toDataUrl('image/png'), 'plotWindow');
+ }
+}
+</pre>
+</div>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="Plot2D">
+<button class="show-code">Code</button>
+new <strong>Plot2D</strong>(CanvasRenderingContext2D context, LinkedHashMap _ydata, List _xdata, LinkedHashMap _color, LinkedHashMap _style, num _pwidth, num _pheight, int _linewidth) <a class="anchor-link" href="#Plot2D"
+              title="Permalink to Plot2D.Plot2D">#</a></h4>
+<div class="doc">
+<pre class="source">
+Plot2D(this.context, this._ydata, this._xdata, this._color, this._style,
+   this._pwidth, this._pheight, this._linewidth) {
+
+ var _tickPt;
+ var _first = true;
+ var _miny, _maxy;
+ var _minx, _maxx;
+
+ //Compute y axis min and max.
+ for (var value in _ydata.values) {
+   if (value != null) {
+     if (value.isEmpty) {
+       throw new ArgumentError("Empty data lists are not supported.");
+     } else if (_first) {
+       _miny = value.fold(value.first, min);
+       _maxy = value.fold(value.first, max);
+       _first = false;
+     } else {
+       var _tempMin = value.fold(value.first, min);
+       if (_tempMin &lt; _miny) _miny = _tempMin;
+       var _tempMax = value.fold(value.first, max);
+       if (_tempMax &gt; _maxy) _maxy = _tempMax;
+     }
+   }
+ }
+
+ //Compute x axis min and max.
+ _minx = _xdata.fold(_xdata.first, min);
+ _maxx = _xdata.fold(_xdata.first, max);
+
+ //Compute optimum divisions of axes.
+ _xAxisCfg = new _AxisConfig().axes(_minx, _maxx, _pwidth - _border);
+ _yAxisCfg = new _AxisConfig().axes(_miny, _maxy, _pheight - _border);
+
+ //Define and initialize the plot parameters.
+ _xmin = _xAxisCfg.min;
+ _xmax = _xAxisCfg.max;
+ _xdiv = _xAxisCfg.div;
+ _xstep = _xAxisCfg.step;
+ _ymin = _yAxisCfg.min;
+ _ymax = _yAxisCfg.max;
+ _ydiv = _yAxisCfg.div;
+ _ystep = _yAxisCfg.step;
+ var
+   _offset = _style == 'data' ? _xdiv / _xstep : _xdiv,
+   _increment = _style == 'data' ? 1 : _xstep;
+
+ //Draw the graph outline.
+ context
+   ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
+   ..lineCap = "round"
+   ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border, 2)
+   ..lineWidth = 1;
+
+ //Create tick marks on x axis.
+ for (var i = _borderL + _offset; i &lt; _pwidth - (_border - _borderL); i += _offset) {
+   context
+     //bottom ticks
+     ..beginPath()
+     ..moveTo(i.toInt() + 0.5, _pheight - _borderT)
+     ..lineTo(i.toInt() + 0.5, _pheight - _borderT - _tickSize)
+     ..stroke()
+     //top ticks
+     ..moveTo(i.toInt() + 0.5, _borderT + _tickSize)
+     ..lineTo(i.toInt() + 0.5, _borderT)
+     ..stroke();
+ }
+
+ //Add labels to the x axis tick marks.
+ context
+   ..textAlign = 'center'
+   ..font = '10pt Consolas';
+ _tickPt = _xmin;
+ //if (_xstep == _xstep.toInt()) {
+ if (_increment == _increment.toInt()) {
+   for (var j = _xmin; j &lt;= _xmax; j += _increment) {
+     context.fillText(j.toInt().toString(), _borderL + ((j - _xmin)/_increment)
+         * _offset, _pheight - _borderT + (_borderT / 3));
+     _tickPt += _increment;
+   }
+ } else {
+   // TODO: exponent, precision, fixed number labels.
+   var numDigits = 2;
+   if (_xmax &lt; 0.01) numDigits = 3;
+   for (var j = _xmin; j &lt;= _xmax; j += _increment) {
+     context.fillText(j.toStringAsFixed(numDigits), _borderL + ((j - _xmin)/_increment) * _offset,
+         _pheight - _borderT + (_borderT / 3));
+     _tickPt += _increment;
+   }
+ }
+
+ //Create tick marks on y axis.
+ for (var i = _pheight - _borderT - _ydiv; i &gt; _borderT; i -= _ydiv) {
+   context
+     //left ticks
+     ..moveTo(_borderL, i.toInt() + 0.5)
+     ..lineTo(_borderL + _tickSize, i.toInt() + 0.5)
+     ..stroke()
+     //right ticks
+     ..moveTo(_pwidth - (_border - _borderL), i.toInt() + 0.5)
+     ..lineTo(_pwidth - (_border - _borderL) - _tickSize, i.toInt() + 0.5)
+     ..stroke();
+ }
+
+ //Add labels to the y axis tics.
+ context
+   ..font = '10pt Consolas'
+   ..textAlign = 'right';
+ _tickPt = _ymin;
+ if (_ystep == _ystep.toInt()) {
+   for (var i = _pheight - _borderT; i &gt; _borderT - _ydiv / 2; i -= _ydiv) {
+     context.fillText(_tickPt.toInt().toString(), _borderL - _tickSize, i.toInt());
+     _tickPt += _ystep;
+   }
+ } else {
+   // Need test cases for exponent, precision, fixed number labels.
+   var numDigits = 2;
+   if (_ymax &lt; 0.01) numDigits = 3;
+   for (var i = _pheight - _borderT; i &gt; _borderT - _ydiv / 2; i -= _ydiv) {
+     context.fillText(_tickPt.toStringAsFixed(numDigits), _borderL - _tickSize,
+         i.toInt());
+     _tickPt += _ystep;
+   }
+ }
+
+ //Plot the data.
+ for (var waveform in _ydata.keys) {
+   if (_ydata[waveform] != null) {
+     _yWithData++;
+     if (_ydata[waveform].length &gt; _xdata.length) {
+       _dataLength = _xdata.length;
+     } else {
+       _dataLength = _ydata[waveform].length;
+     }
+     if (_style[waveform] == 'data') {
+       context.lineWidth = _linewidth;
+       _drawData(_color[waveform], _ydata[waveform]);
+     } else if (_style[waveform] == 'points') {
+       context.lineWidth = _linewidth;
+       _drawPoints(_color[waveform], _ydata[waveform]);
+     } else if (_style[waveform] == 'curve' || _style[waveform] == 'curvepts') {
+       context.lineWidth = _linewidth;
+       _drawCurve(_color[waveform], _ydata[waveform], _style[waveform]);
+     } else if (_style[waveform] == 'line' || _style[waveform] == 'linepts') {
+       context.lineWidth = _linewidth;
+       _drawLine(_color[waveform], _ydata[waveform], _style[waveform]);
+     }
+   }
+ }
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Properties</h3>
+<div class="field"><h4 id="context">
+<button class="show-code">Code</button>
+final CanvasRenderingContext2D         <strong>context</strong> <a class="anchor-link"
+            href="#context"
+            title="Permalink to Plot2D.context">#</a>
+        </h4>
+        <div class="doc">
+<pre class="source">
+final CanvasRenderingContext2D context
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="date">
+<button class="show-code">Code</button>
+void <strong>date</strong>([bool short = false]) <a class="anchor-link" href="#date"
+              title="Permalink to Plot2D.date">#</a></h4>
+<div class="doc">
+<p>Adds a date stamp to the current plot.</p>
+<p>The date stamp can be in either a "short" form or a "long" (default) form.</p><ul><li>long: 9:56pm Tue 16-Oct-2012</li><li>short: 9:56pm 10/16/2012</li></ul>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.date(true);
+</code></pre>
+<pre class="source">
+void date([bool short = false]) {
+ String _dateTime = new TimeStamp().stamp(short);
+ context
+   ..fillStyle = 'rgb(85, 98, 112)'
+   ..textAlign = 'right'
+   ..font = '8pt Verdana'
+   ..fillText(_dateTime, _pwidth, _pheight - _tickSize);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="grid">
+<button class="show-code">Code</button>
+void <strong>grid</strong>() <a class="anchor-link" href="#grid"
+              title="Permalink to Plot2D.grid">#</a></h4>
+<div class="doc">
+<p>Adds a grid to a plot.</p>
+<p>Uses the same spacing as the x and y tick marks.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.grid();
+</code></pre>
+<pre class="source">
+void grid() {
+ var _offset = _style == 'data' ? _xdiv / _xstep : _xdiv;
+ context
+   ..fillStyle = 'black'
+   ..lineWidth = 1;
+ for (var i = _borderL + _offset; i &lt; _pwidth - (_border - _borderL); i += _offset) {
+   for (var j = _pheight - _borderT - _ydiv; j &gt; _borderT; j -= _ydiv) {
+     context
+       ..beginPath()
+       ..arc(i.toInt() + 0.5, j.toInt() + 0.5, 1, 0, 2 * PI, false)
+       ..closePath()
+       ..fill();
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="legend">
+<button class="show-code">Code</button>
+void <strong>legend</strong>({String l1: 'y1', String l2: 'y2', String l3: 'y3', String l4: 'y4', String font: 'bold 12px Tahoma', bool top: true}) <a class="anchor-link" href="#legend"
+              title="Permalink to Plot2D.legend">#</a></h4>
+<div class="doc">
+<p>Adds a legend to the current plot.
+All parameters are optional.  In its simpliest form, the legend uses
+the default labels for each graph in the plot (up to 4 graphs per plot).</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.legend();
+</code></pre>
+<p>This method also allows for the specification of names for each graph.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.legend(y1:'y = 3x - 2', y2:'cosh(x)');
+</code></pre>
+<pre class="source">
+void legend({String l1: 'y1', String l2: 'y2', String l3: 'y3',
+   String l4: 'y4', String font: 'bold 12px Tahoma',
+   bool top: true}) {
+ context
+   ..font = font
+   ..textAlign = 'left';
+ var llabel = new LinkedHashMap();
+ llabel["y1"] = _ydata["y1"] != null ? l1 : '';
+ llabel["y2"] = _ydata["y2"] != null ? l2 : '';
+ llabel["y3"] = _ydata["y3"] != null ? l3 : '';
+ llabel["y4"] = _ydata["y4"] != null ? l4 : '';
+ var _yWidths = [context.measureText(llabel["y1"]).width,
+                 context.measureText(llabel["y2"]).width,
+                 context.measureText(llabel["y3"]).width,
+                 context.measureText(llabel["y4"]).width];
+ var
+   _legendWidth = 20 + _yWidths.fold(_yWidths.first, max),
+   _legendHeight = 20 + (_yWithData * _pheight) ~/ (8 * _ydata.length),
+   _legendBorder = 10,
+   _legendX = _pwidth + _borderL - _border - _legendWidth - _legendBorder,
+   _legendY = top == true ? _borderT + _legendBorder
+       : _pheight - _legendBorder - _legendHeight - _borderT,
+   _yOffset = (_legendHeight - 15) ~/ _yWithData;
+ context
+   ..fillStyle = 'white'
+   ..fillRect(_legendX, _legendY, _legendWidth, _legendHeight)
+   ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
+   ..lineCap = "round"
+   ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight, 2)
+   ..lineWidth = 1;
+ for (var waveform in _ydata.keys) {
+   if (_ydata[waveform] != null) {
+     context
+       ..fillStyle = _color[waveform]
+       ..fillText(llabel[waveform], 10 + _legendX, _legendY + _yOffset,
+           _legendWidth);
+     _yOffset += _legendHeight ~/ _yWithData;
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="save">
+<button class="show-code">Code</button>
+void <strong>save</strong>() <a class="anchor-link" href="#save"
+              title="Permalink to Plot2D.save">#</a></h4>
+<div class="doc">
+<p>Saves an individual plot by creating a PNG image in a new browser window.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.save();
+</code></pre>
+<pre class="source">
+void save() {
+ window.open(context.canvas.toDataUrl('image/png'), 'plotWindow');
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="title">
+<button class="show-code">Code</button>
+void <strong>title</strong>(String title, {String color: 'DarkSlateGray', String font: '13pt Verdana'}) <a class="anchor-link" href="#title"
+              title="Permalink to Plot2D.title">#</a></h4>
+<div class="doc">
+<p>Adds a title to the current plot.</p>
+<p>The title is a required String value.  The method also accepts
+two optional named parameters, a String value for the color of the label,
+and a String value for the label font.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.title('A Sample Plot', color:'rgba(42, 42, 88, 0.5)',
+    font:'14pt Caslon');
+</code></pre>
+<pre class="source">
+void title(String title, {String color:'DarkSlateGray',
+   String font:'13pt Verdana'}) {
+ context
+   ..fillStyle = color
+   ..textAlign = 'center'
+   ..font = font
+   ..fillText(title, ((_pwidth  + (2 * _borderL) - _border) / 2), _borderT / 2);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="xlabel">
+<button class="show-code">Code</button>
+void <strong>xlabel</strong>(String xlabelName, {String color: 'DarkSlateGray', String font: '11pt Verdana'}) <a class="anchor-link" href="#xlabel"
+              title="Permalink to Plot2D.xlabel">#</a></h4>
+<div class="doc">
+<p>Adds a label to the x axis.</p>
+<p>The xlabelName is a required String value.  Method also accepts
+two optional named parameters, a String value for the color of the label,
+and a String value for the label font.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.xlabel('samples(n)', color:'red', font:'8pt Arial');
+</code></pre>
+<pre class="source">
+void xlabel(String xlabelName, {String color:'DarkSlateGray',
+   String font:'11pt Verdana'}) {
+ context
+   ..fillStyle = color
+   ..font = font
+   ..textAlign = 'center'
+   ..fillText(xlabelName, ((_pwidth  + (2 * _borderL) - _border)/ 2),
+       _pheight - _borderT / 10);
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="xmarker">
+<button class="show-code">Code</button>
+void <strong>xmarker</strong>(num xval, {bool annotate: false, String color: 'rgb(85, 98, 112)', width: 1}) <a class="anchor-link" href="#xmarker"
+              title="Permalink to Plot2D.xmarker">#</a></h4>
+<div class="doc">
+<p>Adds a marker to the x axis of the current plot at position x = xval.</p>
+<p>The method requires an x value to be provided.  If the value of x specified
+is not a data point (ie, indexOf(xval) returns -1) and the optional
+annotation variable is set to true, the data will not be displayed (ie,
+the marker x position is not interpolated between data points).</p>
+<p>The color and size of the marker can also be specified.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.xmarker(data[4], true);
+</code></pre>
+<pre class="source">
+void xmarker(num xval, {bool annotate:false, String color:'rgb(85, 98, 112)',
+   var width:1}) {
+ var offset = (width % 2) / 2;
+ var _xindex = _xdata.indexOf(xval);
+ context
+   ..font = "italic bold 16px consolas"
+   ..textAlign = 'left'
+   ..strokeStyle = color
+   ..lineWidth = width
+   ..beginPath()
+   ..moveTo(offset + (_borderL + ((xval - _xmin) / _xstep * _xdiv)).toInt(), _pheight - _borderT)
+   ..lineTo(offset + (_borderL + ((xval - _xmin) / _xstep * _xdiv)).toInt(), _borderT)
+   ..stroke();
+ if (annotate) {
+   for (var waveform in _ydata.keys) {
+     if (_ydata[waveform] != null) {
+       var _dataLength = _ydata[waveform].length;
+       if (_xindex &lt; _dataLength &amp;&amp; _xindex != -1) {
+         var
+           _dataPoint = _ydata[waveform][_xindex],
+           _value = _dataPoint.toString(),
+           _valWidth = 10 + context.measureText(_value).width,
+           _valHeight = 5 + _pheight ~/ 32,
+           _valX = _borderL + ((xval - _xmin) / _xstep * _xdiv),
+           _valY = _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv);
+         if (_xindex &lt; _dataLength ~/ 2) {
+           context
+             ..fillStyle = 'rgba(255, 255, 255, 0.85)'
+             ..fillRect(5 + _valX, 10 + _valY - _valHeight, _valWidth, _valHeight)
+             ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
+             ..lineCap = "round"
+             ..strokeRect(5 + _valX, 10 + _valY - _valHeight, _valWidth,
+                 _valHeight, 1)
+             ..fillStyle = _color[waveform]
+             ..fillText(_value, 10 + _borderL + ((xval - _xmin) / _xstep * _xdiv),
+                 5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
+         } else {
+           context
+             ..fillStyle = 'rgba(255, 255, 255, 0.85)'
+             ..fillRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
+                 _valWidth, _valHeight)
+             ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
+             ..lineCap = "round"
+             ..strokeRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
+                 _valWidth, _valHeight, 1)
+             ..fillStyle = _color[waveform]
+             ..fillText(_value, _borderL + ((xval - _xmin) / _xstep * _xdiv) - _valWidth,
+                 5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
+         }
+       }
+     }
+   }
+ }
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="ylabel">
+<button class="show-code">Code</button>
+void <strong>ylabel</strong>(String ylabelName, {String color: 'DarkSlateGray', String font: '11pt Verdana'}) <a class="anchor-link" href="#ylabel"
+              title="Permalink to Plot2D.ylabel">#</a></h4>
+<div class="doc">
+<p>Adds a label to the y axis.</p>
+<p>The ylabelName is a required String value.  Method also accepts
+two optional named parameters, a String value for the color of the label,
+and a String value for the label font.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.ylabel('data(x1e3)', color:'#ccc', font:'16pt Helvetica');
+</code></pre>
+<p>For y values with a large number of signicant digits, it is recommended
+that you scale the data prior to plotting.  It is currently an issue
+to build in the scaling and allow different number notation.  But
+currently, large number of significant digits will likely cause the
+ylabel to draw over the top of the yaxis tick values.</p>
+<pre class="source">
+void ylabel(String ylabelName, {String color:'DarkSlateGray',
+   String font:'11pt Verdana'}) {
+ var
+   _lblWidth = context.measureText(ylabelName),
+   _deltax = _borderL / 4,
+   _deltay = _pheight / 2;
+ context
+   ..fillStyle = color
+   ..font = font
+   ..textAlign = 'center'
+   ..save()
+   ..translate(_deltax, _deltay)
+   ..rotate(-PI / 2)
+   ..translate(-_deltax, -_deltay)
+   ..fillText(ylabelName, 0, _pheight / 2)
+   ..restore();
+}
+</pre>
+</div>
+</div>
+<div class="method"><h4 id="ymarker">
+<button class="show-code">Code</button>
+void <strong>ymarker</strong>(num yval, {String color: 'rgb(85, 98, 112)', width: 1}) <a class="anchor-link" href="#ymarker"
+              title="Permalink to Plot2D.ymarker">#</a></h4>
+<div class="doc">
+<p>Adds a marker to the y axis of the current plot at position y = yval.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.ymarker(0);
+</code></pre>
+<pre class="source">
+void ymarker(num yval, {String color:'rgb(85, 98, 112)', var width:1}) {
+ var offset = (width % 2) / 2;
+ context
+   ..strokeStyle = color
+   ..lineWidth = width
+   ..beginPath()
+   ..moveTo(_borderL, offset + (_pheight - _borderT - ((yval - _ymin) / _ystep * _ydiv)).toInt())
+   ..lineTo(_pwidth - (_border - _borderL), offset + (_pheight - _borderT - ((yval - _ymin) / _ystep * _ydiv)).toInt())
+   ..stroke();
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2013-05-26 18:35:18.394</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        

@@ -1,0 +1,183 @@
+        <!DOCTYPE html>
+        <html>
+        <head>
+                <meta charset="utf-8">
+        <title>TimeStamp class / simplot Library / Dart Documentation</title>
+        <link rel="stylesheet" type="text/css"
+            href="../styles.css">
+        <link href="//fonts.googleapis.com/css?family=Open+Sans:400,600,700,800" rel="stylesheet" type="text/css">
+        <link rel="shortcut icon" href="../favicon.ico">
+        
+        </head>
+        <body data-library="simplot" data-type="TimeStamp">
+        <div class="page">
+        <div class="header">
+          <a href="../index.html"><div class="logo"></div></a>
+          <a href="../index.html">Dart Documentation</a>
+         &rsaquo; <a href="../simplot.html">simplot</a> &rsaquo; <a href="../simplot/TimeStamp.html">TimeStamp</a>        <div id="search-box">
+          <input type="search" name="q" id="q" autocomplete="off"
+              class="search-input" placeholder="Search API">
+        </div>
+        
+      </div>
+      <div class="drop-down" id="drop-down"></div>
+      
+        <div class="nav">
+        
+</div>
+<div class="content">
+        <h2><strong>TimeStamp</strong>
+          class
+        </h2>
+        
+<button id="show-inherited" class="show-inherited">Hide inherited</button>
+<div class="doc">
+<p>A class for adding a time stamp.</p>
+<p>Method stamp(<code>bool short = false</code>) returns a string for use as a time stamp.</p>
+<p>This class is instantiated using the date() method of the top level
+plot() function.</p>
+<p>Usage:</p>
+<pre><code>var myPlot = plot(data);
+myPlot.date();
+</code></pre>
+<pre class="source">
+class TimeStamp {
+
+ HashMap _months = new HashMap();
+ HashMap _weekdays = new HashMap();
+ DateTime _currentTime = new DateTime.now();
+ int _year, _month, _day, _hour, _minute, _weekday;
+
+ TimeStamp() {
+   _year = _currentTime.year;
+   _month = _currentTime.month;
+   _day = _currentTime.day;
+   _hour = _currentTime.hour;
+   _minute = _currentTime.minute;
+   _weekday = _currentTime.weekday;
+
+   _months[1] = 'Jan';
+   _months[2] = 'Feb';
+   _months[3] = 'Mar';
+   _months[4] = 'Apr';
+   _months[5] = 'May';
+   _months[6] = 'Jun';
+   _months[7] = 'Jul';
+   _months[8] = 'Aug';
+   _months[9] = 'Sep';
+   _months[10] = 'Oct';
+   _months[11] = 'Nov';
+   _months[12] = 'Dec';
+
+   _weekdays[1] = 'Mon';
+   _weekdays[2] = 'Tue';
+   _weekdays[3] = 'Wed';
+   _weekdays[4] = 'Thu';
+   _weekdays[5] = 'Fri';
+   _weekdays[6] = 'Sat';
+   _weekdays[7] = 'Sun';
+ }
+
+ String stamp([bool short = false]) {
+   String timeStamp;
+   String meridian;
+   String minutes = _minute &lt; 10 ? '0$_minute' : '$_minute';
+
+   if (_hour &gt;= 12) {
+     if (_hour &gt; 12) _hour -= 12;
+     meridian = 'pm';
+   } else {
+     meridian = 'am';
+   }
+
+   if (short) {
+     return timeStamp = '$_hour:$minutes$meridian $_month/$_day/$_year';
+   } else {
+     return timeStamp = '$_hour:$minutes$meridian ${_weekdays[_weekday]} '
+         '$_day-${_months[_month]}-$_year';
+   }
+ }
+}
+</pre>
+</div>
+<div>
+<h3>Constructors</h3>
+<div class="method"><h4 id="TimeStamp">
+<button class="show-code">Code</button>
+new <strong>TimeStamp</strong>() <a class="anchor-link" href="#TimeStamp"
+              title="Permalink to TimeStamp.TimeStamp">#</a></h4>
+<div class="doc">
+<pre class="source">
+TimeStamp() {
+ _year = _currentTime.year;
+ _month = _currentTime.month;
+ _day = _currentTime.day;
+ _hour = _currentTime.hour;
+ _minute = _currentTime.minute;
+ _weekday = _currentTime.weekday;
+
+ _months[1] = 'Jan';
+ _months[2] = 'Feb';
+ _months[3] = 'Mar';
+ _months[4] = 'Apr';
+ _months[5] = 'May';
+ _months[6] = 'Jun';
+ _months[7] = 'Jul';
+ _months[8] = 'Aug';
+ _months[9] = 'Sep';
+ _months[10] = 'Oct';
+ _months[11] = 'Nov';
+ _months[12] = 'Dec';
+
+ _weekdays[1] = 'Mon';
+ _weekdays[2] = 'Tue';
+ _weekdays[3] = 'Wed';
+ _weekdays[4] = 'Thu';
+ _weekdays[5] = 'Fri';
+ _weekdays[6] = 'Sat';
+ _weekdays[7] = 'Sun';
+}
+</pre>
+</div>
+</div>
+</div>
+<div>
+<h3>Methods</h3>
+<div class="method"><h4 id="stamp">
+<button class="show-code">Code</button>
+String <strong>stamp</strong>([bool short = false]) <a class="anchor-link" href="#stamp"
+              title="Permalink to TimeStamp.stamp">#</a></h4>
+<div class="doc">
+<pre class="source">
+String stamp([bool short = false]) {
+ String timeStamp;
+ String meridian;
+ String minutes = _minute &lt; 10 ? '0$_minute' : '$_minute';
+
+ if (_hour &gt;= 12) {
+   if (_hour &gt; 12) _hour -= 12;
+   meridian = 'pm';
+ } else {
+   meridian = 'am';
+ }
+
+ if (short) {
+   return timeStamp = '$_hour:$minutes$meridian $_month/$_day/$_year';
+ } else {
+   return timeStamp = '$_hour:$minutes$meridian ${_weekdays[_weekday]} '
+       '$_day-${_months[_month]}-$_year';
+ }
+}
+</pre>
+</div>
+</div>
+</div>
+        </div>
+        <div class="clear"></div>
+        </div>
+        <div class="footer">
+          <div>This page was generated at 2013-05-26 18:35:18.367</div>
+        </div>
+        <script async src="../client-live-nav.js"></script>
+        </body></html>
+        
