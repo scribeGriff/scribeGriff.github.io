@@ -107,7 +107,8 @@ class Plot2D {
    context
      ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
      ..lineCap = "round"
-     ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border, 2)
+     ..lineWidth = 2
+     ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border)
      ..lineWidth = 1;
 
    //Create tick marks on x axis.
@@ -490,7 +491,8 @@ class Plot2D {
      ..fillRect(_legendX, _legendY, _legendWidth, _legendHeight)
      ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
      ..lineCap = "round"
-     ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight, 2)
+     ..lineWidth = 2
+     ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight)
      ..lineWidth = 1;
    for (var waveform in _ydata.keys) {
      if (_ydata[waveform] != null) {
@@ -548,8 +550,10 @@ class Plot2D {
                ..fillRect(5 + _valX, 10 + _valY - _valHeight, _valWidth, _valHeight)
                ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
                ..lineCap = "round"
+               ..lineWidth = 1
                ..strokeRect(5 + _valX, 10 + _valY - _valHeight, _valWidth,
-                   _valHeight, 1)
+                   _valHeight)
+               ..lineWidth = width
                ..fillStyle = _color[waveform]
                ..fillText(_value, 10 + _borderL + ((xval - _xmin) / _xstep * _xdiv),
                    5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
@@ -560,8 +564,10 @@ class Plot2D {
                    _valWidth, _valHeight)
                ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
                ..lineCap = "round"
+               ..lineWidth = 1
                ..strokeRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
-                   _valWidth, _valHeight, 1)
+                   _valWidth, _valHeight)
+               ..lineWidth = width
                ..fillStyle = _color[waveform]
                ..fillText(_value, _borderL + ((xval - _xmin) / _xstep * _xdiv) - _valWidth,
                    5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
@@ -596,8 +602,8 @@ class Plot2D {
   *     var myPlot = plot(data);
   *     myPlot.save();
   */
- void save() {
-   window.open(context.canvas.toDataUrl('image/png'), 'plotWindow');
+ void save({String name:'plotWindow'}) {
+   window.open(context.canvas.toDataUrl('image/png'), name);
  }
 }
 </pre>
@@ -661,7 +667,8 @@ Plot2D(this.context, this._ydata, this._xdata, this._color, this._style,
  context
    ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
    ..lineCap = "round"
-   ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border, 2)
+   ..lineWidth = 2
+   ..strokeRect(_borderL, _borderT, _pwidth - _border, _pheight - _border)
    ..lineWidth = 1;
 
  //Create tick marks on x axis.
@@ -880,7 +887,8 @@ void legend({String l1: 'y1', String l2: 'y2', String l3: 'y3',
    ..fillRect(_legendX, _legendY, _legendWidth, _legendHeight)
    ..strokeStyle = "rgb(85, 98, 112)"    //"#556270"
    ..lineCap = "round"
-   ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight, 2)
+   ..lineWidth = 2
+   ..strokeRect(_legendX, _legendY, _legendWidth, _legendHeight)
    ..lineWidth = 1;
  for (var waveform in _ydata.keys) {
    if (_ydata[waveform] != null) {
@@ -897,7 +905,7 @@ void legend({String l1: 'y1', String l2: 'y2', String l3: 'y3',
 </div>
 <div class="method"><h4 id="save">
 <button class="show-code">Code</button>
-void <strong>save</strong>() <a class="anchor-link" href="#save"
+void <strong>save</strong>({String name: 'plotWindow'}) <a class="anchor-link" href="#save"
               title="Permalink to Plot2D.save">#</a></h4>
 <div class="doc">
 <p>Saves an individual plot by creating a PNG image in a new browser window.</p>
@@ -906,8 +914,8 @@ void <strong>save</strong>() <a class="anchor-link" href="#save"
 myPlot.save();
 </code></pre>
 <pre class="source">
-void save() {
- window.open(context.canvas.toDataUrl('image/png'), 'plotWindow');
+void save({String name:'plotWindow'}) {
+ window.open(context.canvas.toDataUrl('image/png'), name);
 }
 </pre>
 </div>
@@ -1011,8 +1019,10 @@ void xmarker(num xval, {bool annotate:false, String color:'rgb(85, 98, 112)',
              ..fillRect(5 + _valX, 10 + _valY - _valHeight, _valWidth, _valHeight)
              ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
              ..lineCap = "round"
+             ..lineWidth = 1
              ..strokeRect(5 + _valX, 10 + _valY - _valHeight, _valWidth,
-                 _valHeight, 1)
+                 _valHeight)
+             ..lineWidth = width
              ..fillStyle = _color[waveform]
              ..fillText(_value, 10 + _borderL + ((xval - _xmin) / _xstep * _xdiv),
                  5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
@@ -1023,8 +1033,10 @@ void xmarker(num xval, {bool annotate:false, String color:'rgb(85, 98, 112)',
                  _valWidth, _valHeight)
              ..strokeStyle = 'rgba(85, 98, 112, 0.9)'   //"#556270"
              ..lineCap = "round"
+             ..lineWidth = 1
              ..strokeRect(_valX - _valWidth - 5, 10 + _valY - _valHeight,
-                 _valWidth, _valHeight, 1)
+                 _valWidth, _valHeight)
+             ..lineWidth = width
              ..fillStyle = _color[waveform]
              ..fillText(_value, _borderL + ((xval - _xmin) / _xstep * _xdiv) - _valWidth,
                  5 + _pheight - _borderT - ((_dataPoint - _ymin) / _ystep * _ydiv));
@@ -1105,7 +1117,7 @@ void ymarker(num yval, {String color:'rgb(85, 98, 112)', var width:1}) {
         <div class="clear"></div>
         </div>
         <div class="footer">
-          <div>This page was generated at 2013-05-26 18:35:18.394</div>
+          <div>This page was generated at 2013-06-16 20:45:38.249</div>
         </div>
         <script async src="../client-live-nav.js"></script>
         </body></html>

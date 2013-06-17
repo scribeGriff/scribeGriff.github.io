@@ -38,6 +38,70 @@ the plot() command has a number of optional named parameters that allow
 a high level of configurability.</p></div>
 <div>
 <h3>Functions</h3>
+<div class="method"><h4 id="requestDataWS">
+<button class="show-code">Code</button>
+Future <strong>requestDataWS</strong>(String host, int port, {String message: 'Please send data.', Element display: null}) <a class="anchor-link" href="#requestDataWS"
+              title="Permalink to requestDataWS">#</a></h4>
+<div class="doc">
+<p>  Connect to a server through a websocket to retrieve data for plotting.
+  Usage:</p>
+<pre><code>String host = 'local';
+int port = 8080;
+var myDisplay = query('#console');
+var myMessage = 'Send data request';
+Future reqData = requestDataWS(host, port, message:myMessage,
+    display:myDisplay);
+reqData.then((data) {
+  plot(data);
+});
+</code></pre>
+<pre class="source">
+Future requestDataWS(String host, int port, {String message:'Please send data.',
+     Element display:null}) {
+ Completer _c = new Completer();
+ if (host == 'local') host = '127.0.0.1';
+ WebSocket _ws = new WebSocket('ws://$host:$port/ws');
+
+ if (display != null) {
+   display.appendHtml('Opening connection at $host:$port&lt;br/&gt;');
+ }
+ _ws.onOpen.listen((Event opn) {
+   DateTime sent = new DateTime.fromMillisecondsSinceEpoch(opn.timeStamp);
+   String request = json.stringify({"request": message, "date": '$sent'});
+   _ws.send(request);
+ });
+
+ _ws.onClose.listen((CloseEvent cls) {
+   if (display != null) {
+     if (cls.wasClean) {
+       display.appendHtml('Connection closed satisfactorily.&lt;br/&gt;');
+     } else {
+       display.appendHtml('Connection closed but an error occurred.&lt;br/&gt;');
+     }
+   }
+ });
+
+ _ws.onError.listen((ErrorEvent err) {
+   if (display != null) {
+     display.appendHtml('There was an error with the connection: ${err.message}&lt;br/&gt;');
+   }
+   _c.complete(null);
+ });
+
+ _ws.onMessage.listen((MessageEvent msg) {
+   var data = json.parse(msg.data);
+   if (display != null) {
+     display.appendHtml('Successfully received data from the server. &lt;br/&gt;');
+   }
+   _ws.close(1000, 'Got the data.  Thanks!');
+   _c.complete(data);
+ });
+
+ return _c.future;
+}
+</pre>
+</div>
+</div>
 <div class="method"><h4 id="log10">
 <button class="show-code">Code</button>
 num <strong>log10</strong>(num x) <a class="anchor-link" href="#log10"
@@ -118,7 +182,7 @@ WindowBase saveAll(List plots, {num scale: 1.0, bool quad: true}) {
    "width": "$_widthAll",
    "height": "$_heightAll"
  });
- CanvasRenderingContext2D _contextAll = _plotAllCanvas.context2d;
+ CanvasRenderingContext2D _contextAll = _plotAllCanvas.context2D;
  _contextAll.fillStyle = 'white';
  _contextAll.fillRect(0, 0, _widthAll, _heightAll);
  if (quad) {
@@ -226,16 +290,22 @@ Plot2D plot(List y1, {
    "height": "$_pheight",
  });
  graphContainer.nodes.add(_plotCanvas);
- CanvasRenderingContext2D context = _plotCanvas.context2d;
- context.fillStyle = 'white';
- context.fillRect(0, 0, _pwidth, _pheight);
- context.fillStyle = 'black';
+ CanvasRenderingContext2D context = _plotCanvas.context2D;
+ context
+   ..fillStyle = 'white'
+   ..fillRect(0, 0, _pwidth, _pheight)
+   ..fillStyle = 'black';
 
  //If no xdata was passed, create a row vector
  //based on the length of y1.
  if (xdata == null) {
-   xdata = new List.generate(y1.length, (var index) =&gt;
-       index + 1, growable:false);
+   if (style1 == 'data') {
+     xdata = new List.generate(y1.length, (var index) =&gt;
+         index + 1, growable:false);
+   } else {
+     xdata = new List.generate(y1.length, (var index) =&gt;
+         index, growable:false);
+   }
  } else if (style1 == 'data') {
    xdata = new List.generate(y1.length, (var index) =&gt;
        index + xdata[0], growable:false);
@@ -289,7 +359,7 @@ Plot2D plot(List y1, {
         <div class="clear"></div>
         </div>
         <div class="footer">
-          <div>This page was generated at 2013-05-26 18:35:18.343</div>
+          <div>This page was generated at 2013-06-16 20:45:38.205</div>
         </div>
         <script async src="client-live-nav.js"></script>
         </body></html>
